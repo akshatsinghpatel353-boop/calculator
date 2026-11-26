@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storm Calculator</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, #172c50, #030712 75%);
+    overflow: hidden;
+}
+
+.calculator {
+    width: 340px;
+    padding: 25px;
+    background: rgba(20, 35, 60, 0.92);
+    border: 1px solid #42618d;
+    border-radius: 22px;
+    box-shadow: 0 0 45px #168bff30;
+    position: relative;
+    z-index: 1;
+}
+
+h2 {
+    color: white;
+    text-align: center;
+    margin-bottom: 22px;
+    letter-spacing: 3px;
+}
+
+#display {
+    width: 100%;
+    height: 75px;
+    background: #071426;
+    border: 1px solid #29486c;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 15px;
+    color: #38bdf8;
+    font-size: 29px;
+    text-align: right;
+    outline: none;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+button {
+    height: 60px;
+    border: 1px solid #425c7d;
+    border-radius: 12px;
+    background: #243a59;
+    color: white;
+    font-size: 21px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: .2s;
+}
+
+button:hover {
+    background: #38618f;
+    box-shadow: 0 0 18px #38bdf855;
+}
+
+button:active {
+    transform: scale(.88);
+    background: #38bdf8;
+}
+
+/* Button click animation */
+
+button.clicked {
+    animation: buttonGlow .35s ease;
+}
+
+@keyframes buttonGlow {
+    0% { box-shadow: 0 0 0 #38bdf8; }
+    50% { box-shadow: 0 0 25px #38bdf8; }
+    100% { box-shadow: 0 0 0 #38bdf8; }
+}
+
+.operator {
+    background: #1557a0;
+}
+
+.clear {
+    background: #c02636;
+}
+
+.equal {
+    background: #078b58;
+}
+
+.zero {
+    grid-column: span 2;
+}
+
+/* Result animation */
+
+.result-show {
+    animation: resultPop .65s ease;
+}
+
+@keyframes resultPop {
+    0% {
+        opacity: 0;
+        transform: scale(.3);
+        filter: blur(15px);
+    }
+    70% {
+        transform: scale(1.15);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* TORNADO SCREEN */
+
+.storm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(1, 7, 20, .96);
+    z-index: 10;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.storm-overlay.active {
+    display: flex;
+}
+
+.storm {
+    width: 230px;
+    height: 310px;
+    position: relative;
+    animation: stormAppear 1.5s ease-in-out;
+}
+
+/* Tornado funnel */
+
+.funnel {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 190px;
+    height: 280px;
+
+    background: repeating-linear-gradient(
+        180deg,
+        #e0f2fe 0px,
+        #8eb9d8 12px,
+        #244e75 25px,
+        #d5f3ff 38px
+    );
+
+    clip-path: polygon(
+        0 0, 100% 0, 87% 15%,
+        75% 30%, 65% 45%,
+        56% 60%, 50% 78%,
+        46% 100%, 54% 100%,
+        51% 78%, 61% 60%,
+        73% 45%, 86% 30%, 100% 15%
+    );
+
+    filter: drop-shadow(0 0 15px #55bfff);
+    animation: funnelSpin .5s linear infinite;
+}
+
+.storm::before,
+.storm::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    width: 230px;
+    height: 230px;
+    border: 7px solid transparent;
+    border-top-color: #a5e5ff;
+    border-bottom-color: #258ed9;
+    border-radius: 50%;
+    filter: drop-shadow(0 0 12px #38bdf8);
+    animation: cyclone 1s linear infinite;
+}
+
+.storm::after {
+    width: 170px;
+    height: 170px;
+    top: 40px;
+    animation-direction: reverse;
+    animation-duration: .65s;
+}
+
+@keyframes cyclone {
+    from { transform: translateX(-50%) rotate(0deg); }
+    to { transform: translateX(-50%) rotate(360deg); }
+}
+
+@keyframes funnelSpin {
+    from { filter: brightness(.8) drop-shadow(0 0 10px #38bdf8); }
+    to { filter: brightness(1.5) drop-shadow(0 0 30px #38bdf8); }
+}
+
+@keyframes stormAppear {
+    0% {
+        transform: scale(.1) rotate(-30deg);
+        opacity: 0;
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1.3) rotate(10deg);
+    }
+    100% {
+        transform: scale(1) rotate(0);
+        opacity: 1;
+    }
+}
+
+/* Floating particles */
+
+.particle {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #9be7ff;
+    box-shadow: 0 0 15px #38bdf8;
+    animation: fly 1s linear infinite;
+}
+
+@keyframes fly {
+    0% {
+        transform: translate(0, 0) scale(0);
+        opacity: 0;
+    }
+    50% { opacity: 1; }
+    100% {
+        transform: translate(var(--x), var(--y)) scale(1.8);
+        opacity: 0;
+    }
+}
+
+.storm-text {
+    color: #7dd3fc;
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    margin-top: 25px;
+    animation: textPulse .5s infinite alternate;
+}
+
+@keyframes textPulse {
+    from { opacity: .4; }
+    to { opacity: 1; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="calculator">
+
+    <h2>STORM CALC</h2>
+
+    <input type="text" id="display" value="0" readonly>
+
+    <div class="buttons">
+
+        <button class="clear" onclick="clearDisplay()">AC</button>
+        <button onclick="deleteLast()">DEL</button>
+        <button class="operator" onclick="append('/')">÷</button>
+        <button class="operator" onclick="append('*')">×</button>
+
+        <button onclick="append('7')">7</button>
+        <button onclick="append('8')">8</button>
+        <button onclick="append('9')">9</button>
+        <button class="operator" onclick="append('-')">−</button>
+
+        <button onclick="append('4')">4</button>
+        <button onclick="append('5')">5</button>
+        <button onclick="append('6')">6</button>
+        <button class="operator" onclick="append('+')">+</button>
+
+        <button onclick="append('1')">1</button>
+        <button onclick="append('2')">2</button>
+        <button onclick="append('3')">3</button>
+        <button class="equal" onclick="calculate()">=</button>
+
+        <button class="zero" onclick="append('0')">0</button>
+        <button onclick="append('.')">.</button>
+
+    </div>
+</div>
+
+<!-- Tornado Animation -->
+
+<div class="storm-overlay" id="stormOverlay">
+
+    <div class="storm">
+        <div class="funnel"></div>
+    </div>
+
+    <div class="storm-text">CALCULATING...</div>
+
+</div>
+
+<script>
+
+const display = document.getElementById("display");
+const overlay = document.getElementById("stormOverlay");
+
+let expression = "";
+let finished = false;
+let isCalculating = false;
+
+// Button click animation
+
+document.querySelectorAll("button").forEach(button => {
+    button.addEventListener("click", () => {
+        button.classList.remove("clicked");
+        void button.offsetWidth;
+        button.classList.add("clicked");
+    });
+});
+
+// Tornado particles
+
+for (let i = 0; i < 35; i++) {
+    let particle = document.createElement("div");
+    particle.className = "particle";
+
+    particle.style.left = Math.random() * 100 + "%";
+    particle.style.top = Math.random() * 100 + "%";
+
+    particle.style.setProperty("--x", (Math.random() * 300 - 150) + "px");
+    particle.style.setProperty("--y", (Math.random() * 300 - 150) + "px");
+
+    particle.style.animationDelay = Math.random() + "s";
+
+    overlay.appendChild(particle);
+}
+
+// Enter numbers
+
+function append(value) {
+
+    if (isCalculating) return;
+
+    if (finished) {
+        if ("+-*/".includes(value)) {
+            finished = false;
+        } else {
+            expression = "";
+            finished = false;
+        }
+    }
+
+    if (expression === "" && "+*/".includes(value)) return;
+
+    expression += value;
+    display.value = expression || "0";
+}
+
+// Calculate with tornado
+
+function calculate() {
+
+    if (expression === "" || isCalculating) return;
+
+    let answer;
+
+    try {
+
+        if (!/^[0-9+\-*/.() ]+$/.test(expression)) {
+            throw new Error();
+        }
+
+        answer = Function('"use strict"; return (' + expression + ')')();
+
+        if (!Number.isFinite(answer)) {
+            throw new Error();
+        }
+
+        answer = Number(answer.toPrecision(12));
+
+    } catch (error) {
+        answer = "Error";
+    }
+
+    isCalculating = true;
+
+    // Show tornado
+    overlay.classList.add("active");
+
+    // Show result after animation
+    setTimeout(() => {
+
+        overlay.classList.remove("active");
+
+        expression = answer === "Error" ? "" : String(answer);
+
+        display.value = answer;
+
+        display.classList.remove("result-show");
+        void display.offsetWidth;
+        display.classList.add("result-show");
+
+        finished = true;
+        isCalculating = false;
+
+    }, 1800);
+}
+
+// Clear
+
+function clearDisplay() {
+
+    if (isCalculating) return;
+
+    expression = "";
+    display.value = "0";
+    finished = false;
+}
+
+// Delete
+
+function deleteLast() {
+
+    if (isCalculating) return;
+
+    if (finished) {
+        clearDisplay();
+        return;
+    }
+
+    expression = expression.slice(0, -1);
+    display.value = expression || "0";
+}
+
+// Keyboard support
+
+document.addEventListener("keydown", event => {
+
+    if (isCalculating) return;
+
+    if ("0123456789+-*/.".includes(event.key)) {
+        append(event.key);
+    }
+
+    if (event.key === "Enter" || event.key === "=") {
+        calculate();
+    }
+
+    if (event.key === "Backspace") {
+        deleteLast();
+    }
+
+    if (event.key === "Escape") {
+        clearDisplay();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
